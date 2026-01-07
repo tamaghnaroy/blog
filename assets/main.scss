@@ -54,10 +54,6 @@ a:hover {
   box-shadow: var(--shadow);
 }
 
-.sidebar-section + .sidebar-section {
-  margin-top: 2rem;
-}
-
 .profile-card {
   display: grid;
   gap: 0.75rem;
@@ -366,6 +362,41 @@ a:hover {
   font-size: 0.85em;
   opacity: 0.75;
   margin: 0.15rem 0 0.6rem;
+}
+
+.sidebar-section {
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+}
+
+.sidebar-section + .sidebar-section {
+  padding-top: 1.5rem;
+}
+
+.sidebar-section:last-child {
+  padding-bottom: 0;
+  border-bottom: 0;
+}
+
+.sidebar-heading {
+  margin: 0 0 0.9rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: #64748b;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.sidebar-heading::before {
+  content: "";
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 999px;
+  background: var(--accent);
+  box-shadow: 0 0 0 4px rgba(29, 78, 216, 0.12);
 }
 
 /* Content area: keep good reading width but allow expansion */
