@@ -1,5 +1,5 @@
 ---
-layout: default
+layout: sidebar-page
 category: math
 title: Math
 ---
