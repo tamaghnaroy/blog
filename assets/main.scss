@@ -319,7 +319,10 @@ a:hover {
 
 /* Make the overall content area wider than Minima's default ~800px */
 .wrapper {
-  max-width: 1200px;
+  max-width: 1400px;
+  width: min(95vw, 1400px);
+  resize: horizontal;
+  overflow: auto;
 }
 
 /* Reduce side padding a bit on large screens */
@@ -336,6 +339,7 @@ a:hover {
   grid-template-columns: 320px minmax(0, 1fr);
   gap: 1.5rem;
   align-items: start;
+  min-width: 0;
 }
 
 /* Sidebar styling */
