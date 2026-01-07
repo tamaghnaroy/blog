@@ -1,5 +1,5 @@
 ---
-layout: sidebar-page
+layout: sidebar
 category: theory
 title: Theory
 ---

@@ -1,5 +1,5 @@
 ---
-layout: sidebar-home
+layout: sidebar
 title: Home
 ---
 
