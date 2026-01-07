@@ -1,6 +1,7 @@
 ---
 layout: default
 category: math
+title: Math
 ---
 
-{% include_relative ../_category_template.md %}
+{% include category_list.html %}
