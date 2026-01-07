@@ -16,10 +16,7 @@
       {% assign name = cat[0] %}
       {% assign posts = cat[1] %}
       <li>
-        <a
-          class="{% if page.category == name %}active{% endif %}"
-          href="{{ '/category/' | append: name | append: '/' | relative_url }}"
-        >
+        <a href="{{ '/category/' | append: name | append: '/' | relative_url }}">
           {{ name }} ({{ posts | size }})
         </a>
       </li>
