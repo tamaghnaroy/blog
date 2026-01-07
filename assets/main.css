@@ -1,0 +1,32 @@
+---
+---
+
+@import "minima";
+
+.layout {
+  display: flex;
+  gap: 2rem;
+  align-items: flex-start;
+}
+
+.sidebar {
+  width: 280px;
+  position: sticky;
+  top: 1rem;
+}
+
+.content {
+  flex: 1;
+  min-width: 0;
+}
+
+.post-list, .category-list {
+  list-style: none;
+  padding-left: 0;
+}
+
+.post-date {
+  font-size: 0.85em;
+  opacity: 0.7;
+  margin-bottom: 0.75rem;
+}
