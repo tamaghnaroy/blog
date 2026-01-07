@@ -1,4 +1,16 @@
-title: My Blog
+title: Tamaghna Roy — Quant & AI Notes
+description: "Research notes on mathematical ideas, AI, and quantitative finance."
 theme: minima
 baseurl: "/blog"
 url: "https://tamaghnaroy.github.io"
+plugins:
+  - jekyll-feed
+author:
+  name: Tamaghna Roy
+  headline: "Quantitative Researcher"
+  location: ""
+social_links:
+  github: tamaghnaroy
+  linkedin: ""
+  scholar: ""
+  twitter: ""

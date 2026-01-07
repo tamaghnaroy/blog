@@ -3,29 +3,55 @@ layout: default
 ---
 <div class="layout">
   <aside class="sidebar">
-    <h3>Posts</h3>
-    <ul class="post-list">
-      {% for post in site.posts %}
-        <li>
-          <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
-          <div class="post-date">{{ post.date | date: "%b %-d, %Y" }}</div>
-        </li>
-      {% endfor %}
-    </ul>
+    <div class="profile-card">
+      <div class="profile-title">{{ site.author.name | default: site.title }}</div>
+      <div class="profile-subtitle">{{ site.author.headline }}</div>
+      <p class="profile-description">{{ site.description }}</p>
+      <div class="profile-actions">
+        <a class="button" href="{{ '/feed.xml' | relative_url }}">RSS</a>
+        <a class="button button-secondary" href="{{ site.url }}">Main site</a>
+      </div>
+    </div>
 
-    <h3>Categories</h3>
-    <ul class="category-list">
-      {% assign cats = site.categories | sort %}
-      {% for cat in cats %}
-        {% assign name = cat[0] %}
-        {% assign posts = cat[1] %}
-        <li>
-          <a href="{{ '/category/' | append: name | append: '/' | relative_url }}">
-            {{ name }} ({{ posts | size }})
-          </a>
-        </li>
-      {% endfor %}
-    </ul>
+    <div class="sidebar-section">
+      <h3>Recent Posts</h3>
+      <ul class="post-list">
+        {% for post in site.posts limit: 6 %}
+          <li>
+            <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+            <div class="post-date">{{ post.date | date: "%b %-d, %Y" }}</div>
+            {% if post.excerpt %}
+              <div class="post-excerpt">{{ post.excerpt | strip_html | truncate: 100 }}</div>
+            {% endif %}
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Categories</h3>
+      <ul class="category-list">
+        {% assign cats = site.categories | sort %}
+        {% for cat in cats %}
+          {% assign name = cat[0] %}
+          {% assign posts = cat[1] %}
+          <li>
+            <a href="{{ '/category/' | append: name | append: '/' | relative_url }}">
+              {{ name }} ({{ posts | size }})
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Research Focus</h3>
+      <ul class="focus-list">
+        <li>Probabilistic modeling & Bayesian inference</li>
+        <li>Stochastic processes & market microstructure</li>
+        <li>ML systems for portfolio construction</li>
+      </ul>
+    </div>
   </aside>
 
   <main class="content">
