@@ -21,7 +21,7 @@ layout: default
             <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
             <div class="post-date">{{ post.date | date: "%b %-d, %Y" }}</div>
             {% if post.excerpt %}
-              <div class="post-excerpt">{{ post.excerpt | strip_html | truncate: 100 }}</div>
+              <div class="post-excerpt">{{ post.excerpt | strip_html | truncate: 110 }}</div>
             {% endif %}
           </li>
         {% endfor %}
@@ -50,6 +50,24 @@ layout: default
         <li>Probabilistic modeling & Bayesian inference</li>
         <li>Stochastic processes & market microstructure</li>
         <li>ML systems for portfolio construction</li>
+      </ul>
+    </div>
+
+    <div class="sidebar-section">
+      <h3>Connect</h3>
+      <ul class="social-list">
+        {% if site.social_links.github and site.social_links.github != "" %}
+          <li><a href="https://github.com/{{ site.social_links.github }}">GitHub</a></li>
+        {% endif %}
+        {% if site.social_links.linkedin and site.social_links.linkedin != "" %}
+          <li><a href="https://www.linkedin.com/in/{{ site.social_links.linkedin }}">LinkedIn</a></li>
+        {% endif %}
+        {% if site.social_links.scholar and site.social_links.scholar != "" %}
+          <li><a href="{{ site.social_links.scholar }}">Google Scholar</a></li>
+        {% endif %}
+        {% if site.social_links.twitter and site.social_links.twitter != "" %}
+          <li><a href="https://twitter.com/{{ site.social_links.twitter }}">Twitter</a></li>
+        {% endif %}
       </ul>
     </div>
   </aside>

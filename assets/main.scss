@@ -4,14 +4,14 @@
 @import "minima";
 
 :root {
-  --bg: #f8fafc;
+  --bg: #f4f6f8;
   --surface: #ffffff;
-  --border: #e2e8f0;
+  --border: #d8dee4;
   --text: #0f172a;
-  --muted: #475569;
-  --accent: #2563eb;
-  --accent-soft: rgba(37, 99, 235, 0.12);
-  --shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+  --muted: #4b5563;
+  --accent: #1d4ed8;
+  --accent-soft: rgba(29, 78, 216, 0.1);
+  --shadow: 0 10px 24px rgba(15, 23, 42, 0.08);
 }
 
 body {
@@ -21,18 +21,26 @@ body {
   line-height: 1.7;
 }
 
+a {
+  color: var(--accent);
+}
+
+a:hover {
+  color: #1e40af;
+}
+
 .page-content {
-  padding: 3rem 0 4rem;
+  padding: 2.5rem 0 4rem;
 }
 
 .wrapper {
-  max-width: 1200px;
+  max-width: 1100px;
 }
 
 .layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
-  gap: 2.5rem;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 2rem;
   align-items: start;
 }
 
@@ -40,7 +48,7 @@ body {
   position: sticky;
   top: 1.5rem;
   padding: 1.5rem;
-  border-radius: 18px;
+  border-radius: 16px;
   border: 1px solid var(--border);
   background: var(--surface);
   box-shadow: var(--shadow);
@@ -84,7 +92,7 @@ body {
   align-items: center;
   justify-content: center;
   padding: 0.55rem 1rem;
-  border-radius: 999px;
+  border-radius: 10px;
   font-weight: 600;
   font-size: 0.9rem;
   color: #fff;
@@ -96,7 +104,7 @@ body {
 
 .button:hover {
   transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+  box-shadow: 0 8px 16px rgba(29, 78, 216, 0.18);
 }
 
 .button.button-secondary {
@@ -111,6 +119,16 @@ body {
   list-style: none;
   padding: 0;
   margin: 0;
+}
+
+.social-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.social-list li + li {
+  margin-top: 0.5rem;
 }
 
 .category-posts {
@@ -152,15 +170,15 @@ body {
 .content {
   background: var(--surface);
   padding: 2.5rem;
-  border-radius: 20px;
+  border-radius: 18px;
   box-shadow: var(--shadow);
   border: 1px solid var(--border);
 }
 
 .hero {
-  padding-bottom: 2.5rem;
+  padding-bottom: 2rem;
   border-bottom: 1px solid var(--border);
-  margin-bottom: 2.5rem;
+  margin-bottom: 2rem;
 }
 
 .eyebrow {
@@ -198,9 +216,9 @@ body {
 .home-card {
   background: #fdfdfd;
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 1.5rem;
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 8px 18px rgba(15, 23, 42, 0.05);
 }
 
 .home-card h2 {
@@ -212,7 +230,7 @@ body {
 }
 
 .post-hero {
-  padding-bottom: 2rem;
+  padding-bottom: 1.75rem;
   border-bottom: 1px solid var(--border);
   margin-bottom: 2rem;
 }
@@ -246,6 +264,7 @@ body {
   background: var(--accent-soft);
   padding: 1rem 1.25rem;
   border-radius: 12px;
+  color: var(--muted);
 }
 
 .post-body code {
@@ -270,7 +289,7 @@ body {
 
 .post-footer-card {
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 14px;
   padding: 1.5rem;
   background: #f8fafc;
 }
