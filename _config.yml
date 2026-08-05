@@ -5,8 +5,7 @@ baseurl: "/blog"
 url: "https://tamaghnaroy.github.io"
 plugins:
   - jekyll-feed
-author: "Tamaghna Roy"
-author_profile:
+author:
   name: Tamaghna Roy
   headline: "Quantitative Researcher"
   location: ""
