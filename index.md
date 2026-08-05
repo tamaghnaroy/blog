@@ -1,5 +1,5 @@
 ---
-layout: sidebar-home
+layout: sidebar
 title: Home
 ---
 
@@ -14,6 +14,7 @@ title: Home
   <div class="hero-actions">
     <a class="button" href="{{ '/feed.xml' | relative_url }}">Subscribe via RSS</a>
     <a class="button button-secondary" href="{{ '/category/math/' | relative_url }}">Explore Math</a>
+    <a class="button button-secondary" href="{{ '/how-to-write-blog-posts/' | relative_url }}">Writing Guide</a>
   </div>
 </section>
 
