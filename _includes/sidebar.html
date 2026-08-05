@@ -1,9 +1,9 @@
 <aside class="sidebar">
   <section class="sidebar-section profile-card">
     <div>
-      <div class="profile-title">{{ site.author_profile.name | default: site.author }}</div>
-      {% if site.author_profile.headline %}
-        <div class="profile-subtitle">{{ site.author_profile.headline }}</div>
+      <div class="profile-title">{{ site.author.name | default: site.title }}</div>
+      {% if site.author.headline %}
+        <div class="profile-subtitle">{{ site.author.headline }}</div>
       {% endif %}
     </div>
     {% if site.description %}
