@@ -5,6 +5,22 @@ baseurl: "/blog"
 url: "https://tamaghnaroy.github.io"
 plugins:
   - jekyll-feed
+exclude:
+  - AGENTS.md
+  - SKILL.md
+  - README.md
+  - Gemfile
+  - Gemfile.lock
+  - node_modules
+  - vendor/bundle/
+  - vendor/cache/
+  - vendor/gems/
+  - vendor/ruby/
+header_pages:
+  - index.md
+  - category/theory/index.md
+  - category/math/index.md
+  - how-to-write-blog-posts.md
 author:
   name: Tamaghna Roy
   headline: "Quantitative Researcher"
