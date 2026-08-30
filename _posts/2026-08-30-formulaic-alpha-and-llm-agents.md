@@ -32,12 +32,12 @@ $$
 
 Here $\hat\mu_t$ may be based on several alpha scores, $\Sigma_t$ is a risk model, $\widehat{\mathrm{TC}}$ estimates trading costs, and $\mathcal C_t$ encodes exposure, liquidity, borrow, leverage, and concentration limits. Keeping $f$ separate from this optimizer makes both research and audit much clearer.
 
-```text
-point-in-time data  →  typed formula  →  cross-sectional scores
-                                               ↓
-                                    risk, cost, and constraint model
-                                               ↓
-                                      executable portfolio weights
+```mermaid
+flowchart LR
+    A[Point-in-Time Data] --> B[Typed Formula / AST]
+    B --> C[Cross-Sectional Scores]
+    C --> D[Risk, Cost & Constraint Model]
+    D --> E[Executable Portfolio Weights]
 ```
 
 ### A small example, with a large caveat
@@ -130,10 +130,14 @@ Monte Carlo tree search (MCTS) adds disciplined allocation. A node represents a 
 
 A robust agentic system assigns narrow roles with explicit handoffs:
 
-```text
-researcher → DSL compiler → data/timing guardian → evaluator → portfolio steward
-     ↑                                                          │
-     └────────────── memory and independent critic ────────────┘
+```mermaid
+flowchart LR
+    A[Researcher] --> B[DSL Compiler]
+    B --> C[Timing Guardian]
+    C --> D[Evaluator]
+    D --> E[Portfolio Steward]
+    E --> F[(Structured Memory & Critic)]
+    F -. Feedback / Diagnostics .-> A
 ```
 
 The researcher proposes a mechanism and candidates. The compiler produces only valid ASTs. The timing guardian checks timestamps, universe membership, and data provenance. The evaluator runs the fixed experiment. The portfolio steward tests incremental value. An independent critic can reject a claim that rests on a fragile subperiod or a hidden exposure. This separation is valuable because no one agent should be able to both invent a formula and redefine the test that approves it.
