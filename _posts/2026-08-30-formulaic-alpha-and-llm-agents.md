@@ -10,7 +10,7 @@ That distinction is more than tidy notation. It is the difference between a clev
 
 ## 1. What a formulaic alpha is
 
-At decision time $t$, let $U_t$ be the *point-in-time* investable universe and let $X_{t-L+1:t}$ contain only data known by then: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
+At decision time $t$, let $U_t$ be the *point-in-time* investable universe of size $|U_t|$ and let $X_{t-L+1:t}$ denote the historical feature panel spanning the maximum system lookback window $L$. This panel contains only data known by decision time $t$: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
 
 $$
 s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{|U_t|}. \tag{1}
@@ -66,7 +66,7 @@ e &::= \texttt{field} \mid \texttt{constant} \\
 \end{aligned}
 $$
 
-where $u$ is a unary operator, $b$ is a binary operator, $d$ is a permitted lookback, and $g$ is a point-in-time grouping such as industry. In practice, each node also carries metadata: value type, units, frequency, lookback, warm-up requirement, missing-value behavior, and data-availability timestamp.
+where $u$ is a unary operator, $b$ is a binary operator, $d \le L$ is a permitted operator lookback parameter (with maximum system history $L$), and $g$ is a point-in-time grouping such as industry. In practice, each node also carries metadata: value type, units, frequency, lookback, warm-up requirement, missing-value behavior, and data-availability timestamp.
 
 For example, a simple expression might be
 
