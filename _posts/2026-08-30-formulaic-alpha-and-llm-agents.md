@@ -27,10 +27,10 @@ where $\delta$ is the delay from observing the signal to the first tradable pric
 Think of the formula as a microscope, not a factory. It magnifies one possible pattern in a large data panel. Portfolio construction decides whether that pattern is useful after the rest of the book is visible:
 
 $$
-w_t=\arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t-\lambda w^\top\Sigma_t w-\eta\,\widehat{\mathrm{TC}}(w-w_{t-1})\right\}.
+w_t=\arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t-\lambda w^\top\Sigma_t w-\eta\,\widehat{\operatorname{TC}}(w-w_{t-1})\right\}.
 $$
 
-Here $\hat\mu_t$ may be based on several alpha scores, $\Sigma_t$ is a risk model, $\widehat{\mathrm{TC}}$ estimates trading costs, and $\mathcal C_t$ encodes exposure, liquidity, borrow, leverage, and concentration limits. Keeping $f$ separate from this optimizer makes both research and audit much clearer.
+Here $\hat\mu_t$ may be based on several alpha scores, $\Sigma_t$ is a risk model, $\widehat{\operatorname{TC}}$ estimates trading costs, and $\mathcal C_t$ encodes exposure, liquidity, borrow, leverage, and concentration limits. Keeping $f$ separate from this optimizer makes both research and audit much clearer.
 
 ```mermaid
 flowchart LR
@@ -177,7 +177,7 @@ Use walk-forward development, not one flattering train/test split. Keep the fina
 For cross-sectional work, a useful first diagnostic is the daily Spearman information coefficient:
 
 $$
-\operatorname{RankIC}_t=\operatorname{corr}_{\mathrm{Spearman}}(s_t,y_t^{(h)}).
+\operatorname{RankIC}_t=\operatorname{corr}_{\mathrm{Spearman}}(s_t, y_t^{(h)}).
 $$
 
 Report its mean, dispersion, serial dependence, and a heteroskedasticity-and-autocorrelation-consistent (HAC) t-statistic. Then ask harder questions: Does the signal survive by sector, size, volatility regime, and geographic market? Does it work after the assumed delay and costs? Does the result belong to a coherent economic mechanism, or to one lucky window?
