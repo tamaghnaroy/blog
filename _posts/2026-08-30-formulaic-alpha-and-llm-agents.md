@@ -10,10 +10,10 @@ That distinction is more than tidy notation. It is the difference between a clev
 
 ## 1. What a formulaic alpha is
 
-At decision time $t$, let $U_t$ be the *point-in-time* investable universe of size $|U_t|$ and let $X_{t-L+1:t}$ denote the historical feature panel spanning the maximum system lookback window $L$. This panel contains only data known by decision time $t$: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
+At decision time $t$, let $U_t$ be the *point-in-time* investable universe with cardinality $\vert U_t\vert$, and let $X_{t-L+1:t}$ denote the historical feature panel spanning the maximum system lookback window $L$. This panel contains only data known by decision time $t$: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
 
 $$
-s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{|U_t|}. \tag{1}
+s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{\vert U_t\vert}. \tag{1}
 $$
 
 The output $s_{i,t}$ is a score for asset $i$, not a promised return. The usual target is a future, executable-horizon return with observation delay $\delta$,
