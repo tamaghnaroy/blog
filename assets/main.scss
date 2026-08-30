@@ -318,6 +318,11 @@ a:hover {
   overflow-x: auto;
 }
 
+.mermaid svg {
+  max-width: 100%;
+  height: auto;
+}
+
 @media (max-width: 640px) {
   .page-content {
     padding: 2rem 0 3rem;
