@@ -1,237 +1,106 @@
 ---
 layout: post
-title: "Formulaic Alpha: From Hand-Written Signals to Guardrailed Autonomous Research"
+title: "The Mechanics of Formulaic Alpha: AST Parsers, Search Failures, and Execution Lags"
 categories: [theory, math]
 ---
 
-Formulaic alpha is best understood as **symbolic research under market constraints**. A researcher writes—or a search system proposes—a compact expression from a controlled language. The expression turns information that was available at a decision time into a cross-sectional forecast. It is not a trading strategy by itself. It becomes one only after risk control, costs, and execution are added.
-
-That distinction is more than tidy notation. It is the difference between a clever backtest and a deployable investment process.
-
-## 1. What a formulaic alpha is
-
-At decision time $t$, let $U_t$ be the *point-in-time* investable universe with cardinality $\vert U_t\vert$, and let $X_{t-L+1:t}$ denote the historical feature panel spanning the maximum system lookback window $L$. This panel contains only data known by decision time $t$: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
+In daily equity research, a formulaic alpha is an algebraic function evaluated on a panel of market and fundamental data:
 
 $$
-s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{\vert U_t\vert}. \tag{1}
+s_t = f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{\vert U_t\vert}. \tag{1}
 $$
 
-The output $s_{i,t}$ is a score for asset $i$, not a promised return. The usual target is a future, executable-horizon return with observation delay $\delta$,
+It takes a slice of history $X$ across active names $U_t$ and outputs a relative score vector $s_t$. 
+
+A common issue in quantitative pipelines is evaluating $s_t$ without enforcing realistic execution timing. If scores are evaluated against forward returns over holding horizon $h$:
 
 $$
-y_{i,t}^{(h)}=\frac{P^{\mathrm{exec}}_{i,t+\delta+h}}{P^{\mathrm{exec}}_{i,t+\delta}}-1, \tag{2}
+y_{i,t}^{(h)} = \frac{P^{\mathrm{exec}}_{i,t+\delta+h}}{P^{\mathrm{exec}}_{i,t+\delta}} - 1, \tag{2}
 $$
 
-where $\delta$ is the delay from observing the signal to the first tradable price. Defining $\delta$ explicitly prevents a common error: using a closing value to trade at that same close.
+setting $\delta = 0$ assumes fills occur at day $t$'s market close. Because signal calculation requires close prices, orders in live production execute at day $t+1$'s open or morning VWAP ($\delta = 1$). In short-term reversal factors, this 1-day execution lag substantially degrades raw backtest returns as overnight price corrections diminish the intraday edge.
 
-Think of the formula as a microscope, not a factory. It magnifies one possible pattern in a large data panel. Portfolio construction decides whether that pattern is useful after the rest of the book is visible:
-
-$$
-w_t=\arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t-\lambda w^\top\Sigma_t w-\eta\,\widehat{\operatorname{TC}}(w-w_{t-1})\right\}. \tag{3}
-$$
-
-Here $\hat\mu_t$ may be based on several alpha scores, $\Sigma_t$ is a risk model, $\widehat{\operatorname{TC}}$ estimates trading costs, and $\mathcal C_t$ encodes exposure, liquidity, borrow, leverage, and concentration limits. Keeping $f$ separate from this optimizer makes both research and audit much clearer.
-
-```mermaid
-flowchart LR
-    A[Point-in-Time Data] --> B[Typed Formula / AST]
-    B --> C[Cross-Sectional Scores]
-    C --> D[Risk, Cost & Constraint Model]
-    D --> E[Executable Portfolio Weights]
-```
-
-### A small example, with a large caveat
-
-One well-known published example is Kakushadze's Alpha #101:
+Converting scores $s_t$ into portfolio weights $w_t$ requires an optimizer rather than direct position mapping:
 
 $$
-\operatorname{Alpha101}=\frac{\operatorname{close}-\operatorname{open}}
-{\operatorname{high}-\operatorname{low}+0.001}.
+w_t = \arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t - \lambda w^\top\Sigma_t w - \eta\,\widehat{\operatorname{TC}}(w - w_{t-1})\right\}, \tag{3}
 $$
 
-It measures where the session's body sits inside its intraday range. A positive value means the close exceeded the open; the denominator scales that move by the day’s range and avoids division by zero. It is often described as a short-horizon momentum-like signal, but that is an empirical hypothesis, not a universal law. Its sign, availability convention, corporate-action treatment, and performance must be re-tested for the market and trading clock in use. The original paper presents 101 explicit formulas and code-like definitions; it does not grant any formula a permanent edge. [Kakushadze (2016)](https://arxiv.org/abs/1601.00991)
+where $\hat\mu_t$ aggregates alpha forecasts, $\Sigma_t$ is the risk covariance matrix, $\widehat{\operatorname{TC}}$ estimates transaction costs, and $\mathcal C_t$ specifies portfolio constraints.
 
-## 2. The language: formulas as typed abstract syntax trees
-
-The key engineering choice is to represent an expression as an **abstract syntax tree (AST)**. An AST stores meaning, not merely text. In `ts_rank(ret_1, 5)`, the root is `ts_rank`; its children are the return series and a five-day lookback. That structure lets a system validate, cache, compare, mutate, and explain a formula safely.
-
-A compact grammar can be written as:
+Consider Kakushadze (2016) Alpha #101:
 
 $$
-\begin{aligned}
-e &::= \texttt{field} \mid \texttt{constant} \\
-  &\quad\mid\, u(e) \mid b(e,e) \\
-  &\quad\mid\, ts(e,d) \mid ts_2(e,e,d) \\
-  &\quad\mid\, cs(e) \mid neutralize(e,g)
-\end{aligned}
+\operatorname{Alpha\#101} = \frac{\operatorname{close} - \operatorname{open}}{(\operatorname{high} - \operatorname{low}) + 0.001}.
 $$
 
-where $u$ is a unary operator, $b$ is a binary operator, $d \le L$ is a permitted operator lookback parameter (with maximum system history $L$), and $g$ is a point-in-time grouping such as industry. In practice, each node also carries metadata: value type, units, frequency, lookback, warm-up requirement, missing-value behavior, and data-availability timestamp.
+The formula scales intraday price movement by the trading range. Under a $\delta = 1$ execution lag and standard trading friction, the factor's standalone performance is minimal.
 
-For example, a simple expression might be
+## AST Representation and Static Typing
 
-$$
-\alpha_t=-\operatorname{cs\_rank}\left(\operatorname{ts\_rank}(r_{1,t}, 5)\right).
-$$
+In automated search frameworks, formulas are parsed into Abstract Syntax Trees (ASTs). For the 5-day reversal expression $\alpha_t = -\operatorname{cs\_rank}\left(\operatorname{ts\_rank}(r_{1,t}, 5)\right)$:
 
-```mermaid
-graph TD
-    Neg["negate (*)"] --> CSRank["cs_rank (cross-sectional rank)"]
-    CSRank --> TSRank["ts_rank (rolling 5-day rank)"]
-    TSRank --> Ret["ret_1 (1-day return)"]
-    TSRank --> Window["window: 5"]
-```
+- Leaf node: 1-day returns $r_{1,t}$.
+- Time-series node: `ts_rank(·, 5)` computing rolling 5-day percentile ranks per stock.
+- Cross-sectional node: `cs_rank(·)` computing cross-sectional ranks across $U_t$.
+- Root: `negate(·)` inverting the sign.
 
-Read it from the leaves upward: calculate each asset’s one-period return, rank that return within the asset’s last five observations, rank those values across today’s universe, then reverse the sign. The economic story is a short-horizon reversal hypothesis. The AST is the wiring diagram that makes that story testable.
+A typed AST parser checks arity, dimensions, and operator validity before execution, preventing invalid operations like passing 2D matrices to scalar operations or mixing incompatible units.
 
-| Node family | Examples | Question it answers |
-|---|---|---|
-| Terminals | `open`, `close`, `volume`, `eps`, `estimate_revision` | What information is allowed in? |
-| Arithmetic and guards | `add`, `subtract`, `signed_power`, `safe_divide` | How are quantities combined without unstable edge cases? |
-| Time-series operators | `ts_mean(x, d)`, `ts_rank(x, d)`, `ts_delta(x, d)`, `ts_corr(x, y, d)`, `decay_linear(x, d)` | How has one asset behaved through time? |
-| Cross-sectional operators | `cs_rank(x)`, `zscore(x)`, `winsorize(x)` | How does an asset compare with its peers today? |
-| Group and risk operators | `neutralize(x, industry)`, `residualize(x, B_t)` | Is the apparent signal just sector or known-factor exposure? |
+## Combinatorial Search and Mode Collapse
 
-### Type checks are research controls, not decoration
+A standard grammar combining 20 operators, 15 input fields, and 5 lookback windows yields a large search space. Several search paradigms explore this space:
 
-An untyped expression generator will eventually propose nonsense: `price + volume`, a rolling window with a future endpoint, or a cross-sectional rank inside a time-series operator with ambiguous timing. A strong DSL blocks such forms before evaluation. It can require, for example, that `ts_corr` receive two aligned series, `cs_rank` receive an asset vector at one timestamp, and `neutralize` receive a contemporaneous, point-in-time group label.
+* **Genetic Programming (GP):** Unconstrained crossover often creates deep expression trees that fit in-sample noise, requiring depth penalties or quality-diversity niching (Zhang et al., 2020).
+* **Reinforcement Learning (RL):** Because intermediate trees yield no reward until completion, training policies directly on standalone Information Coefficient (IC) can lead to high-turnover reward hacking. Conditioning rewards on marginal portfolio utility (Eq. 3) helps penalize redundancy (Yu et al., 2023).
+* **Generative Flow Networks (GFlowNets):** Standard RL frequently converges to a single dominant mode (e.g., generating minor variants of a single reversal pattern). GFlowNets (Chen et al., 2025) sample trees proportional to reward $p(\alpha) \propto R(\alpha)$ across directed acyclic graphs to maintain multiple distinct factor modes.
+* **LLM-Guided MCTS:** Language models propose candidate structures based on economic priors. Pairing them with Monte Carlo Tree Search (Shi et al., AAAI 2026) allows systematic exploration while backtest feedback prunes unpromising branches.
 
-Types cannot prove economic value. They can make invalid mathematics, undefined windows, and many timing mistakes impossible to express. That is a major gain when a system evaluates thousands of candidates.
+## Multi-Agent Systems and Contextual Improvement
 
-## 3. The lineage: libraries, benchmarks, and search
+Automated factor mining systems often partition tasks across specialized components:
+1. **Hypothesis Proposer:** Generates candidate AST expressions.
+2. **Type Validator:** Verifies grammar compliance and node arity.
+3. **Execution Sandbox:** Runs vectorized evaluations against fixed data panels.
+4. **Portfolio Evaluator:** Assesses incremental predictive power after transaction costs.
 
-Formulaic alpha did not begin with large language models. Its modern lineage has three useful reference points:
+In these frameworks, self-improvement occurs at the prompt and retrieval context layer rather than through model weight updates: diagnostic logs of failed trials (such as high turnover or rapid IC decay) are recorded in memory to guide subsequent candidate proposals.
 
-1. **Alpha101.** Kakushadze’s 2016 collection made a broad set of explicit, short-horizon symbolic formulas widely discussable and reproducible. It helped establish the formula-as-program idiom. [Paper](https://arxiv.org/abs/1601.00991)
-2. **GTJA Alpha191.** The widely circulated Alpha191 collection expanded the practical vocabulary, particularly in Chinese-market research. It is best treated as a historical formula registry, not as a guaranteed, market-neutral benchmark; implementations vary in conventions and data handling.
-3. **Qlib Alpha158.** Microsoft Qlib’s Alpha158 is a 158-feature data handler used in machine-learning benchmarks. It contains engineered price and volume features and is valuable for reproducible model comparison. It should not be conflated with a curated set of 158 standalone tradable alphas. [Qlib paper](https://www.microsoft.com/en-us/research/publication/qlib-an-ai-oriented-quantitative-investment-platform/) and [Alpha158 documentation](https://github.com/microsoft/qlib/blob/main/docs/component/data.rst)
+## Sources of Empirical Leakage
 
-These resources are a shared vocabulary, much like standard test cases in software. They do not replace a point-in-time dataset, an execution model, or independent validation. Automation followed naturally because the number of legal trees grows explosively as terminals, operators, and windows are added.
+Backtest performance frequently overstates live results due to data integrity issues:
+* **Survivorship Bias:** Using current index constituent memberships for historical simulations rather than historical point-in-time constituent lists.
+* **Restatement Leakage:** Evaluating fundamental signals using post-restatement financial figures prior to their actual publication dates.
+* **Lookahead in Normalization:** Computing cross-sectional statistics (e.g., `zscore`) across entire time series rather than contemporaneous daily cross-sections.
+* **Overlap Leakage:** Evaluating multi-day holding horizons without purging overlapping validation windows.
 
-## 4. The search taxonomy: different engines, the same hard problem
+## Measuring Marginal Contribution and Multiple Testing
 
-Every discovery method must balance three competing goals: find predictive expressions, keep them interpretable, and avoid producing a thousand aliases for the same idea. The methods differ mainly in how they explore the AST space and how they allocate expensive backtests.
-
-### Genetic programming (GP): evolve trees
-
-**Mechanism:** GP maintains an evolving population of candidate ASTs. Selection favors high fitness scores, mutation randomly substitutes subtrees or nodes, and crossover splices subtrees between parent formulas.
-
-* **Exploration vs. Bloat:** Without strong typing and explicit tree-depth penalties, unconstrained crossover causes exponential AST bloat—generating fragile, hundreds-of-nodes expressions that overfit in-sample noise.
-* **Collinearity Risk:** Population convergence often collapses diversity into near-identical variations of the same top-performing signal.
-* **Mitigation:** Strongly typed grammars, parsimony penalties, and quality-diversity (MAP-Elites) niching algorithms keep candidates in structurally distinct behavioral buckets. [AutoAlpha](https://arxiv.org/abs/2002.08245) is an example of this line of work.
-
-### Reinforcement learning (RL): construct a formula one action at a time
-
-**Mechanism:** In tree-building RL, state transitions correspond to appending valid operators, terminals, or close-tree tokens to an open AST leaf. A policy network optimizes expected cumulative reward upon terminal backtest evaluation.
-
-* **Exploration vs. Sparse Feedback:** Credit assignment is difficult because intermediate incomplete ASTs produce zero evaluation reward until the terminal token is generated.
-* **Reward Hacking:** Maximizing standalone in-sample IC leads the policy to exploit idiosyncratic backtest anomalies or produce extreme-turnover signals.
-* **Mitigation:** Grammar-masked action spaces, trajectory reward shaping, and rewards conditioned on **marginal portfolio contribution** (as formalized in Eq. 3) rather than raw univariate IC. [Synergistic alpha collections via RL](https://arxiv.org/abs/2306.12964) makes this portfolio-level objective explicit.
-
-### GFlowNets: sample a *set* of good, diverse trees
-
-**Mechanism:** Generative Flow Networks (GFlowNets) treat formula generation as flow across a directed acyclic graph, training a policy to sample complete formulas $\alpha$ with probability proportional to a positive reward function:
+Initial predictive power is measured using the Spearman Rank Information Coefficient against forward returns:
 
 $$
-p(\alpha)\propto R(\alpha).
+\operatorname{RankIC}_t = \operatorname{corr}_{\mathrm{Spearman}}(s_t, y_t^{(h)}). \tag{4}
 $$
 
-* **Exploration vs. Mode Collapse:** Standard RL and gradient optimizers repeatedly converge to a single dominant global peak. In contrast, GFlowNets preserve multiple distinct high-reward modes.
-* **Collinearity Mitigation:** By sampling proportionally to reward across the entire search landscape, GFlowNets naturally discover orthogonal mechanisms—such as liquidity anomalies, earnings revisions, and residual momentum—within a single training run.
-* **Implementation:** Trajectory-balance objectives applied to AST generation ensure structural factor diversity on the development split. [AlphaSAGE preprint](https://openreview.net/pdf?id=zRKF4ln2VE)
-
-### LLM-guided search and LLM-MCTS: reason, propose, then verify
-
-**Mechanism:** Rather than exploring randomly, Large Language Models leverage semantic financial priors to translate economic hypotheses (e.g., *"isolate intraday liquidity shocks during sector pullbacks"*) directly into typed candidate expressions. [Alpha-GPT](https://arxiv.org/abs/2308.00016) is an early human–AI formulation of this pattern.
-
-* **Exploration via Tree Search:** Pairing LLM priors with Monte Carlo Tree Search (MCTS) provides disciplined exploration-exploitation balancing across candidate formula nodes.
-* **Hallucination & Overfitting Risks:** LLMs can generate plausible-sounding but economically spurious expressions if guided only by unconstrained prompts.
-* **Mitigation:** Subtree-frequency penalties to discourage repetitive patterns, backtest feedback loops for empirical reward updates, and strict holdout partitions to prevent prompt-driven data snooping. [Navigating the Alpha Jungle](https://ojs.aaai.org/index.php/AAAI/article/download/37069/41031) illustrates the LLM–MCTS approach.
-
-### Multi-agent autonomous quants: separate authority, not just prompts
-
-A robust agentic system assigns narrow roles with explicit handoffs:
-
-```mermaid
-flowchart LR
-    A[Researcher] --> B[DSL Compiler]
-    B --> C[Timing Guardian]
-    C --> D[Evaluator]
-    D --> E[Portfolio Steward]
-    E --> F[(Structured Memory & Critic)]
-    F -. Feedback / Diagnostics .-> A
-```
-
-The researcher proposes a mechanism and candidates. The compiler produces only valid ASTs. The timing guardian checks timestamps, universe membership, and data provenance. The evaluator runs the fixed experiment. The portfolio steward tests incremental value. An independent critic can reject a claim that rests on a fragile subperiod or a hidden exposure. This separation is valuable because no one agent should be able to both invent a formula and redefine the test that approves it.
-
-### Memory-driven reflection: learn from evidence, not from flattering prose
-
-Research memory should store structured records: formula hash and canonical AST, dataset version, split, metrics, exposures, turnover, failure codes, and a short mechanism note. Retrieval should include strong candidates *and* informative failures: “worked only in microcaps,” “was industry momentum in disguise,” or “lost all net edge after costs.” The model can then avoid known dead ends while a human can audit why a path was abandoned. This is contextual policy improvement; it does not imply that the base LLM has retrained itself.
-
-## 5. The non-negotiable layer: sealed evaluation and anti-leakage tests
-
-A sealed sandbox accepts a serialized AST, never arbitrary generated code. It evaluates against immutable, versioned feature tensors and returns a limited diagnostics object. This improves security, reproducibility, and comparability. It is not, by itself, proof against leakage. The controls below make the claim credible.
-
-| Control | What it prevents | Evidence to retain |
-|---|---|---|
-| Point-in-time data ledger | Restated fundamentals, stale constituents, and future analyst estimates | Vendor version, as-of time, availability lag, universe snapshot |
-| Clock contract | Trading a signal before it could be known | Decision, order, fill, and label timestamps |
-| Immutable splits | Quietly retuning on the final test period | Hashes for train, development, validation, and untouched test windows |
-| AST-only execution | Arbitrary I/O, hidden code paths, and unreviewed features | Formula JSON, grammar version, validator log |
-| Purged, embargoed validation | Label overlap across nearby observations | Fold definitions and embargo length |
-| Cost and capacity model | Paper profits that cannot be traded | Spread, impact, borrow, ADV, and participation assumptions |
-| Reproducibility record | Results that cannot be recreated | Data hash, code/image hash, random seeds, and full configuration |
-
-Use walk-forward development, not one flattering train/test split. Keep the final holdout inaccessible to the generator and its memory until the research specification is frozen. Audit every transform, including winsorization, imputation, normalization, and group labels, for its fitting window. A model can leak without ever touching a future price—for example, by using a modern index constituent list in an old backtest.
-
-## 6. Score a factor as a portfolio contribution, not a trophy
-
-For cross-sectional work, a useful first diagnostic is the daily Spearman information coefficient evaluated against the delayed horizon target $y_t^{(h)}$ from Eq. 2:
+To determine incremental contribution, candidate scores are residualized against existing factor models and risk exposures ($B_t$):
 
 $$
-\operatorname{RankIC}_t=\operatorname{corr}_{\mathrm{Spearman}}(s_t, y_t^{(h)}). \tag{4}
+\tilde{s}^{(k)}_t = (I - P_{B_t})s^{(k)}_t, \qquad P_{B_t} = B_t(B_t^\top B_t)^{-1}B_t^\top. \tag{5}
 $$
 
-Report its mean, dispersion, serial dependence, and a heteroskedasticity-and-autocorrelation-consistent (HAC) t-statistic. Then ask harder questions: Does the signal survive by sector, size, volatility regime, and geographic market? Does it work after the assumed delay and costs? Does the result belong to a coherent economic mechanism, or to one lucky window?
+If $\tilde{s}^{(k)}_t$ exhibits negligible predictive power, the candidate factor provides no orthogonal diversification.
 
-Most importantly, test the candidate after accounting for the existing book. Let $B_t$ contain approved alpha and risk exposures. A simple residualized score is
-
-$$
-\tilde{s}^{(k)}_t=(I-P_{B_t})s^{(k)}_t,
-\qquad
-P_{B_t}=B_t(B_t^\top B_t)^{-1}B_t^\top, \tag{5}
-$$
-
-with regularization where needed. Evaluate $\tilde{s}^{(k)}_t$, its marginal effect on the optimizer of Eq. 3, and its net contribution to portfolio P&L. A factor with a lower standalone IC can be more valuable if it diversifies the book during stressed markets.
-
-### Multiple testing is part of the model
-
-An autonomous system can test far more expressions than a human. Therefore a plain “$t>2$” rule is not meaningful. Maintain a candidate ledger that counts rejected formulas and records adaptive search paths; use family-wise error-rate controls when false positives are costly, false-discovery-rate controls for large exploratory families, and deflated or reality-check-style performance tests where appropriate. Most of all, reserve a final untouched period. Harvey, Liu, and Zhu showed why conventional significance thresholds are too weak in a factor-rich research setting. [Their paper](https://www.nber.org/papers/w20592) remains essential reading.
-
-## 7. A practical institutional workflow
-
-1. **Write the research contract.** State the market, universe, decision clock, target return, rebalancing rule, costs, constraints, and acceptance gates before generation begins.
-2. **Build the typed DSL and point-in-time panel.** Limit terminals and windows to approved data. Include operator semantics, safe numerical behavior, and canonical AST hashing.
-3. **Generate broadly, evaluate narrowly.** Use GP, RL, GFlowNets, LLM–MCTS, or a hybrid, but send every candidate through the same sealed evaluator.
-4. **Select families, not winners.** Cluster by AST shape, score correlation, and economic mechanism. Keep only candidates with distinct residual value.
-5. **Validate honestly.** Walk forward, apply costs and capacity, correct for search multiplicity, and open the final holdout only once.
-6. **Deploy with monitoring and a kill policy.** Track live versus simulated IC, exposures, turnover, slippage, drift, and data-quality events. Retirement is a valid outcome.
-
-## Closing perspective
-
-The advance from Alpha101 and Alpha191 to Alpha158 benchmarks, symbolic search, and LLM-guided agents is not a story of machines discovering a perpetual money formula. It is a story of better research machinery. Typed ASTs make ideas precise. GP, RL, GFlowNets, and MCTS search more efficiently. Multi-agent roles and memory make the process easier to inspect. Sealed sandboxes and anti-leakage harnesses make results harder to fake by accident.
-
-The durable edge is not the largest factor zoo. It is the ability to reject attractive mistakes quickly, preserve independent evidence, and combine only the signals that improve a realistic portfolio.
+Furthermore, evaluating thousands of candidate formulas increases the rate of false discovery. Multiple testing controls—such as logging candidate trials, adjusting significance thresholds ($t > 3.0$), and maintaining unexposed out-of-sample holdout datasets (Harvey, Liu, and Zhu, 2016)—are necessary to control false positive rates in automated factor search.
 
 ---
 
-### Selected references
+### References
 
-- Z. Kakushadze, [*101 Formulaic Alphas*](https://arxiv.org/abs/1601.00991), 2016.
+- Z. Kakushadze, [*101 Formulaic Alphas*](https://arxiv.org/abs/1601.00991), Wilmott Magazine, 2016.
 - T. Zhang et al., [*AutoAlpha: an Efficient Hierarchical Evolutionary Algorithm for Mining Alpha Factors*](https://arxiv.org/abs/2002.08245), 2020.
-- X. Yang et al., [*Qlib: An AI-oriented Quantitative Investment Platform*](https://www.microsoft.com/en-us/research/publication/qlib-an-ai-oriented-quantitative-investment-platform/), 2020; [Alpha158 documentation](https://github.com/microsoft/qlib/blob/main/docs/component/data.rst).
-- S. Wang et al., [*Alpha-GPT: Human-AI Interactive Alpha Mining for Quantitative Investment*](https://arxiv.org/abs/2308.00016), 2023.
 - S. Yu et al., [*Generating Synergistic Formulaic Alpha Collections via Reinforcement Learning*](https://arxiv.org/abs/2306.12964), 2023.
+- B. Chen et al., [*AlphaSAGE: Structure-Aware Alpha Mining via GFlowNets for Robust Exploration*](https://openreview.net/pdf?id=zRKF4ln2VE), ICLR 2026 / arXiv:2509.25055.
+- Y. Shi et al., [*Navigating the Alpha Jungle: An LLM-Powered MCTS Framework for Formulaic Factor Mining*](https://ojs.aaai.org/index.php/AAAI/article/download/37069/41031), AAAI 2026.
 - C. Harvey, Y. Liu, and H. Zhu, [*… and the Cross-Section of Expected Returns*](https://www.nber.org/papers/w20592), 2016.
 
-*Educational material only; it is not investment advice or a recommendation to trade any security.*
+*Educational research notes only; not investment advice.*
