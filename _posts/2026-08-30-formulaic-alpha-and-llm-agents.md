@@ -4,13 +4,13 @@ title: "The Mechanics of Formulaic Alpha: AST Parsers, Search Failures, and Exec
 categories: [theory, math]
 ---
 
-In daily equity research, a formulaic alpha is an algebraic function evaluated on a panel of market and fundamental data:
+In quantitative equity research, a formulaic alpha is an algebraic function evaluated on a panel of market and fundamental data:
 
 $$
 s_t = f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{\vert U_t\vert}. \tag{1}
 $$
 
-It takes a slice of history $X$ across active names $U_t$ and outputs a relative score vector $s_t$. 
+It maps historical observations $X$ across active names $U_t$ to a relative score vector $s_t$. 
 
 A common issue in quantitative pipelines is evaluating $s_t$ without enforcing realistic execution timing. If scores are evaluated against forward returns over holding horizon $h$:
 
