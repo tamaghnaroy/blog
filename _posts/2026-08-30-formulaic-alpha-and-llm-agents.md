@@ -13,7 +13,7 @@ That distinction is more than tidy notation. It is the difference between a clev
 At decision time $t$, let $U_t$ be the *point-in-time* investable universe and let $X_{t-L+1:t}$ contain only data known by then: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
 
 $$
-s_t=f\!\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{|U_t|}.
+s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{|U_t|}.
 $$
 
 The output $s_{i,t}$ is a score for asset $i$, not a promised return. The usual target is a future, executable-horizon return,
@@ -77,7 +77,7 @@ where $u$ is a unary operator, $b$ is a binary operator, $d$ is a permitted look
 For example, a simple expression might be
 
 $$
-\alpha_t=-\operatorname{cs\_rank}\!\left(\operatorname{ts\_rank}(r_{1,t},5)\right).
+\alpha_t=-\operatorname{cs\_rank}\left(\operatorname{ts\_rank}(r_{1,t}, 5)\right).
 $$
 
 Read it from the leaves upward: calculate each asset’s one-period return, rank that return within the asset’s last five observations, rank those values across today’s universe, then reverse the sign. The economic story is a short-horizon reversal hypothesis. The AST is the wiring diagram that makes that story testable.
