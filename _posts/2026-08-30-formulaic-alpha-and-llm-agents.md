@@ -10,23 +10,35 @@ $$
 s_t = f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{\vert U_t\vert}. \tag{1}
 $$
 
-It maps historical observations $X$ across active names $U_t$ to a relative score vector $s_t$. 
+It maps historical observations $X$ across active names in the point-in-time universe $U_t$ to a relative score vector $s_t$. 
 
-A common issue in quantitative pipelines is evaluating $s_t$ without enforcing realistic execution timing. If scores are evaluated against forward returns over holding horizon $h$:
+```mermaid
+flowchart LR
+    A["Feature Panel X_{t-L+1:t}"] --> B["Formula AST f(X, U)"]
+    B --> C["Alpha Scores s_t"]
+    C --> D["Portfolio Optimizer"]
+    D --> E["Target Weights w_t"]
+```
+
+## 1. Execution Timing and the $\delta$ Horizon
+
+In backtests, factor scores are evaluated against forward holding returns over horizon $h$:
 
 $$
 y_{i,t}^{(h)} = \frac{P^{\mathrm{exec}}_{i,t+\delta+h}}{P^{\mathrm{exec}}_{i,t+\delta}} - 1, \tag{2}
 $$
 
-setting $\delta = 0$ assumes fills occur at day $t$'s market close. Because signal calculation requires close prices, orders in live production execute at day $t+1$'s open or morning VWAP ($\delta = 1$). In short-term reversal factors, this 1-day execution lag substantially degrades raw backtest returns as overnight price corrections diminish the intraday edge.
+where $\delta \ge 1$ specifies the operational execution delay.
 
-Converting scores $s_t$ into portfolio weights $w_t$ requires an optimizer rather than direct position mapping:
+> **Execution Timing Warning:** Setting $\delta = 0$ assumes orders fill at day $t$'s market close—the exact price used to compute the signal. Because signal calculation requires close prices, orders in production must execute at day $t+1$'s open or morning VWAP ($\delta \ge 1$). In short-term reversal factors, this 1-day lag substantially degrades raw backtest returns as overnight price corrections diminish the intraday edge.
+
+Converting raw scores $s_t$ into portfolio weights $w_t$ requires an explicit optimizer rather than direct position mapping:
 
 $$
 w_t = \arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t - \lambda w^\top\Sigma_t w - \eta\,\widehat{\operatorname{TC}}(w - w_{t-1})\right\}, \tag{3}
 $$
 
-where $\hat\mu_t$ aggregates alpha forecasts, $\Sigma_t$ is the risk covariance matrix, $\widehat{\operatorname{TC}}$ estimates transaction costs, and $\mathcal C_t$ specifies portfolio constraints.
+where $\hat\mu_t$ aggregates alpha forecasts, $\Sigma_t$ is the risk covariance matrix, $\widehat{\operatorname{TC}}$ estimates linear and non-linear transaction costs, and $\mathcal C_t$ specifies portfolio constraints.
 
 Consider Kakushadze (2016) Alpha #101:
 
@@ -34,61 +46,75 @@ $$
 \operatorname{Alpha\#101} = \frac{\operatorname{close} - \operatorname{open}}{(\operatorname{high} - \operatorname{low}) + 0.001}.
 $$
 
-The formula scales intraday price movement by the trading range. Under a $\delta = 1$ execution lag and standard trading friction, the factor's standalone performance is minimal.
+The formula scales intraday price movement by the trading range. Under a $\delta \ge 1$ execution lag and realistic market friction, the factor's standalone performance is minimal.
 
-## AST Representation and Static Typing
+## 2. AST Representation and Static Typing
 
 In automated search frameworks, formulas are parsed into Abstract Syntax Trees (ASTs). For the 5-day reversal expression $\alpha_t = -\operatorname{cs\_rank}\left(\operatorname{ts\_rank}(r_{1,t}, 5)\right)$:
 
-- Leaf node: 1-day returns $r_{1,t}$.
-- Time-series node: `ts_rank(·, 5)` computing rolling 5-day percentile ranks per stock.
-- Cross-sectional node: `cs_rank(·)` computing cross-sectional ranks across $U_t$.
-- Root: `negate(·)` inverting the sign.
+```mermaid
+graph TD
+    Neg["negate (unary operator)"] --> CSRank["cs_rank (cross-sectional operator)"]
+    CSRank --> TSRank["ts_rank (time-series operator, d=5)"]
+    TSRank --> Ret["ret_1 (terminal leaf)"]
+```
 
-A typed AST parser checks arity, dimensions, and operator validity before execution, preventing invalid operations like passing 2D matrices to scalar operations or mixing incompatible units.
+Evaluation proceeds bottom-up: compute 1-day returns, calculate rolling 5-day percentile ranks per stock using $\operatorname{ts\_rank}$, rank across the active universe using $\operatorname{cs\_rank}$, and invert the sign via $\operatorname{negate}$.
 
-## Combinatorial Search and Mode Collapse
+### Static Compiler Guardrails
 
-A standard grammar combining 20 operators, 15 input fields, and 5 lookback windows yields a large search space. Several search paradigms explore this space:
+To prevent search algorithms and language models from wasting compute on invalid trees, the AST parser applies three static validation checks before triggering evaluation:
+
+1. **Dimensional Analysis:** Rejects invalid unit operations (e.g., adding $\text{Price} + \text{Volume}$ or multiplying mismatched spatial coordinates) at parse time.
+2. **Causal Horizon Integrity:** Enforces operator lookback bounds $d \ge 1$ with $d \le L$ and execution delay $\delta \ge 1$ so rolling windows cannot look ahead.
+3. **AST Canonical Hashing:** Normalizes commutatively isomorphic trees (e.g., $\operatorname{add}(A, B) \equiv \operatorname{add}(B, A)$ or $\operatorname{mul}(A, B) \equiv \operatorname{mul}(B, A)$) to an invariant canonical hash, pruning redundant duplicate evaluations from the search queue.
+
+## 3. Historical Factor Benchmarks
+
+| Benchmark | Origin | Primary Focus | Practical Caveats |
+|---|---|---|---|
+| **Alpha101** | WorldQuant / Kakushadze (2016) | Explicit daily price-volume formula catalogue | High turnover on short-horizon formulas; raw signals decay rapidly under $\delta \ge 1$ delay and realistic trading fees. |
+| **Alpha191** | Guotai Junan Securities (2017) | Short-period transactional factors with volume turnover & range | Open-source implementations vary widely in missing data, volume turnover metrics (`amount`), and intraday adjustments. |
+| **Alpha158** | Microsoft Qlib (2020) | Engineered 158-feature panel (moments, shadow geometry, ROC) | Designed as tabular input features for ML/GBDT models rather than 158 standalone tradable rules. |
+
+## 4. Combinatorial Search and Mode Collapse
+
+A standard grammar combining 20 operators, 15 input fields, and 5 lookback windows yields a search space exceeding $10^{14}$ possible trees:
 
 * **Genetic Programming (GP):** Unconstrained crossover often creates deep expression trees that fit in-sample noise, requiring depth penalties or quality-diversity niching (Zhang et al., 2020).
 * **Reinforcement Learning (RL):** Because intermediate trees yield no reward until completion, training policies directly on standalone Information Coefficient (IC) can lead to high-turnover reward hacking. Conditioning rewards on marginal portfolio utility (Eq. 3) helps penalize redundancy (Yu et al., 2023).
 * **Generative Flow Networks (GFlowNets):** Standard RL frequently converges to a single dominant mode (e.g., generating minor variants of a single reversal pattern). GFlowNets (Chen et al., 2025) sample trees proportional to reward $p(\alpha) \propto R(\alpha)$ across directed acyclic graphs to maintain multiple distinct factor modes.
 * **LLM-Guided MCTS:** Language models propose candidate structures based on economic priors. Pairing them with Monte Carlo Tree Search (Shi et al., AAAI 2026) allows systematic exploration while backtest feedback prunes unpromising branches.
 
-## Multi-Agent Systems and Contextual Improvement
+## 5. Multi-Agent Systems and Contextual Improvement
 
 Automated factor mining systems often partition tasks across specialized components:
 1. **Hypothesis Proposer:** Generates candidate AST expressions.
-2. **Type Validator:** Verifies grammar compliance and node arity.
+2. **Type Validator:** Verifies grammar compliance, dimensional types, and node arity.
 3. **Execution Sandbox:** Runs vectorized evaluations against fixed data panels.
 4. **Portfolio Evaluator:** Assesses incremental predictive power after transaction costs.
 
 In these frameworks, self-improvement occurs at the prompt and retrieval context layer rather than through model weight updates: diagnostic logs of failed trials (such as high turnover or rapid IC decay) are recorded in memory to guide subsequent candidate proposals.
 
-## Sources of Empirical Leakage
+> **Data Leakage Warning:** Evaluating fundamental signals using post-restatement financial figures prior to their actual announcement dates, or filtering on current index constituents across historical dates, introduces survivorship and restatement bias.
 
-Backtest performance frequently overstates live results due to data integrity issues:
-* **Survivorship Bias:** Using current index constituent memberships for historical simulations rather than historical point-in-time constituent lists.
-* **Restatement Leakage:** Evaluating fundamental signals using post-restatement financial figures prior to their actual publication dates.
-* **Lookahead in Normalization:** Computing cross-sectional statistics (e.g., `zscore`) across entire time series rather than contemporaneous daily cross-sections.
-* **Overlap Leakage:** Evaluating multi-day holding horizons without purging overlapping validation windows.
+## 6. Factor Evaluation Metrics and Alpha Orthogonalization
 
-## Measuring Marginal Contribution and Multiple Testing
-
-Initial predictive power is measured using the Spearman Rank Information Coefficient against forward returns:
+Initial cross-sectional predictive power is formally evaluated using the Spearman Rank Information Coefficient ($\mathrm{RankIC}_t$) and Information Ratio ($\mathrm{IR}$):
 
 $$
-\operatorname{RankIC}_t = \operatorname{corr}_{\mathrm{Spearman}}(s_t, y_t^{(h)}). \tag{4}
+\mathrm{RankIC}_t = \rho_s\left(\operatorname{rank}(s_t), \operatorname{rank}(y_t^{(h)})\right), \quad \mathrm{IR} = \frac{\mathbb{E}[\mathrm{RankIC}_t]}{\operatorname{std}(\mathrm{RankIC}_t)}. \tag{4}
 $$
 
-To determine incremental contribution, candidate scores are residualized against existing factor models and risk exposures ($B_t$):
+### Alpha Orthogonalization
+
+Evaluating factors purely on standalone $\mathrm{RankIC}$ leads to factor crowding. To determine whether a candidate alpha $s_t^{\mathrm{new}}$ provides genuine incremental predictive power after accounting for the existing alpha book $S_t = [s_t^{(1)}, \dots, s_t^{(k-1)}]$, we compute the orthogonalized residual score:
 
 $$
-\tilde{s}^{(k)}_t = (I - P_{B_t})s^{(k)}_t, \qquad P_{B_t} = B_t(B_t^\top B_t)^{-1}B_t^\top. \tag{5}
+s_t^{\perp} = \left(I - S_t (S_t^\top S_t)^{-1} S_t^\top\right) s_t^{\mathrm{new}}. \tag{5}
 $$
 
-If $\tilde{s}^{(k)}_t$ exhibits negligible predictive power, the candidate factor provides no orthogonal diversification.
+If $s_t^{\perp}$ exhibits negligible predictive power against forward returns $y_t^{(h)}$, the candidate factor provides no orthogonal diversification and is discarded regardless of its standalone $\mathrm{RankIC}$.
 
 Furthermore, evaluating thousands of candidate formulas increases the rate of false discovery. Multiple testing controls—such as logging candidate trials, adjusting significance thresholds ($t > 3.0$), and maintaining unexposed out-of-sample holdout datasets (Harvey, Liu, and Zhu, 2016)—are necessary to control false positive rates in automated factor search.
 
