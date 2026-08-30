@@ -114,27 +114,39 @@ Every discovery method must balance three competing goals: find predictive expre
 
 ### Genetic programming (GP): evolve trees
 
-GP maintains a population of ASTs. Selection favors a fitness score; mutation replaces a node or subtree; crossover swaps subtrees between parents. Strongly typed GP and complexity penalties are essential. Without them, the method tends to create long, fragile expressions that memorize the development period. Quality-diversity methods improve the process by retaining useful candidates in distinct behavioral niches rather than selecting only the top in-sample score. [AutoAlpha](https://arxiv.org/abs/2002.08245) is an example of this line of work.
+**Mechanism:** GP maintains an evolving population of candidate ASTs. Selection favors high fitness scores, mutation randomly substitutes subtrees or nodes, and crossover splices subtrees between parent formulas.
+
+* **Exploration vs. Bloat:** Without strong typing and explicit tree-depth penalties, unconstrained crossover causes exponential AST bloat—generating fragile, hundreds-of-nodes expressions that overfit in-sample noise.
+* **Collinearity Risk:** Population convergence often collapses diversity into near-identical variations of the same top-performing signal.
+* **Mitigation:** Strongly typed grammars, parsimony penalties, and quality-diversity (MAP-Elites) niching algorithms keep candidates in structurally distinct behavioral buckets. [AutoAlpha](https://arxiv.org/abs/2002.08245) is an example of this line of work.
 
 ### Reinforcement learning (RL): construct a formula one action at a time
 
-In tree-building RL, the state is a partial AST and an action appends a terminal, operator, or close-tree token. A policy learns to maximize a delayed reward after the completed formula is tested. This is attractive when the reward can include net IC, turnover, complexity, and novelty. It is also brittle: noisy backtests produce noisy rewards, and a poorly designed reward invites reward hacking. A good RL system uses grammar masks, repeated seeds, uncertainty-aware evaluation, and a reward based on **marginal portfolio contribution** (as formalized in the portfolio optimizer of Eq. 3), not raw in-sample IC alone. [Synergistic alpha collections via RL](https://arxiv.org/abs/2306.12964) makes this portfolio-level objective explicit.
+**Mechanism:** In tree-building RL, state transitions correspond to appending valid operators, terminals, or close-tree tokens to an open AST leaf. A policy network optimizes expected cumulative reward upon terminal backtest evaluation.
+
+* **Exploration vs. Sparse Feedback:** Credit assignment is difficult because intermediate incomplete ASTs produce zero evaluation reward until the terminal token is generated.
+* **Reward Hacking:** Maximizing standalone in-sample IC leads the policy to exploit idiosyncratic backtest anomalies or produce extreme-turnover signals.
+* **Mitigation:** Grammar-masked action spaces, trajectory reward shaping, and rewards conditioned on **marginal portfolio contribution** (as formalized in Eq. 3) rather than raw univariate IC. [Synergistic alpha collections via RL](https://arxiv.org/abs/2306.12964) makes this portfolio-level objective explicit.
 
 ### GFlowNets: sample a *set* of good, diverse trees
 
-A generative flow network aims to sample terminal formulas with probability proportional to a positive reward:
+**Mechanism:** Generative Flow Networks (GFlowNets) treat formula generation as flow across a directed acyclic graph, training a policy to sample complete formulas $\alpha$ with probability proportional to a positive reward function:
 
 $$
 p(\alpha)\propto R(\alpha).
 $$
 
-Unlike an optimizer that repeatedly returns one peak, a GFlowNet can preserve several high-reward modes. That matters when a portfolio needs unrelated mechanisms—say, a liquidity pattern, an earnings-revision signal, and a residual reversal signal—rather than 30 cosmetic variants of momentum. The reward should combine predictive quality, cost, complexity, and novelty, and it must be computed only on the development set. Recent alpha-discovery work applies trajectory-balance objectives to AST generation for precisely this diversity problem. [AlphaSAGE preprint](https://openreview.net/pdf?id=zRKF4ln2VE)
+* **Exploration vs. Mode Collapse:** Standard RL and gradient optimizers repeatedly converge to a single dominant global peak. In contrast, GFlowNets preserve multiple distinct high-reward modes.
+* **Collinearity Mitigation:** By sampling proportionally to reward across the entire search landscape, GFlowNets naturally discover orthogonal mechanisms—such as liquidity anomalies, earnings revisions, and residual momentum—within a single training run.
+* **Implementation:** Trajectory-balance objectives applied to AST generation ensure structural factor diversity on the development split. [AlphaSAGE preprint](https://openreview.net/pdf?id=zRKF4ln2VE)
 
 ### LLM-guided search and LLM-MCTS: reason, propose, then verify
 
-An LLM is useful as a proposal and explanation layer, not as an oracle for returns. It can translate a thesis such as “prefer high-volume pullbacks within industries” into a typed candidate, explain an unfamiliar tree, or suggest a repair after a diagnostic failure. [Alpha-GPT](https://arxiv.org/abs/2308.00016) is an early human–AI formulation of this pattern.
+**Mechanism:** Rather than exploring randomly, Large Language Models leverage semantic financial priors to translate economic hypotheses (e.g., *"isolate intraday liquidity shocks during sector pullbacks"*) directly into typed candidate expressions. [Alpha-GPT](https://arxiv.org/abs/2308.00016) is an early human–AI formulation of this pattern.
 
-Monte Carlo tree search (MCTS) adds disciplined allocation. A node represents a partial or complete AST; the system selects branches using an exploration–exploitation rule, expands legal children, evaluates completed candidates, and backs the score up the tree. An LLM can supply a prior over promising expansions and turn evaluator output into a new hypothesis. MCTS should still include uncertainty penalties, subtree-frequency penalties, and held-out gates. Otherwise it simply becomes a more eloquent way to overfit. [Navigating the Alpha Jungle](https://ojs.aaai.org/index.php/AAAI/article/download/37069/41031) illustrates the LLM–MCTS approach.
+* **Exploration via Tree Search:** Pairing LLM priors with Monte Carlo Tree Search (MCTS) provides disciplined exploration-exploitation balancing across candidate formula nodes.
+* **Hallucination & Overfitting Risks:** LLMs can generate plausible-sounding but economically spurious expressions if guided only by unconstrained prompts.
+* **Mitigation:** Subtree-frequency penalties to discourage repetitive patterns, backtest feedback loops for empirical reward updates, and strict holdout partitions to prevent prompt-driven data snooping. [Navigating the Alpha Jungle](https://ojs.aaai.org/index.php/AAAI/article/download/37069/41031) illustrates the LLM–MCTS approach.
 
 ### Multi-agent autonomous quants: separate authority, not just prompts
 
