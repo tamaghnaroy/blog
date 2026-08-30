@@ -59,8 +59,10 @@ A compact grammar can be written as:
 
 $$
 \begin{aligned}
-e &::= \texttt{field}\mid\texttt{constant}\mid u(e)\mid b(e,e)\\
-  &\quad\mid\, ts(e,d)\mid ts_2(e,e,d)\mid cs(e)\mid neutralize(e,g),
+e &::= \texttt{field} \mid \texttt{constant} \\
+  &\quad\mid\, u(e) \mid b(e,e) \\
+  &\quad\mid\, ts(e,d) \mid ts_2(e,e,d) \\
+  &\quad\mid\, cs(e) \mid neutralize(e,g)
 \end{aligned}
 $$
 

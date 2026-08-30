@@ -323,6 +323,18 @@ a:hover {
   height: auto;
 }
 
+/* MathJax responsive display */
+mjx-container[jax="SVG"][display="true"] {
+  overflow-x: auto;
+  overflow-y: hidden;
+  max-width: 100%;
+  padding: 0.5rem 0;
+}
+
+mjx-container[jax="SVG"] > svg {
+  max-width: 100%;
+}
+
 @media (max-width: 640px) {
   .page-content {
     padding: 2rem 0 3rem;
