@@ -66,6 +66,22 @@ $$
 
 where $u$ is a unary operator, $b$ is a binary operator, $d$ is a permitted lookback, and $g$ is a point-in-time grouping such as industry. In practice, each node also carries metadata: value type, units, frequency, lookback, warm-up requirement, missing-value behavior, and data-availability timestamp.
 
+For example, a simple expression might be
+
+$$
+\alpha_t=-\operatorname{cs\_rank}\left(\operatorname{ts\_rank}(r_{1,t}, 5)\right).
+$$
+
+```mermaid
+graph TD
+    Neg["negate (*)"] --> CSRank["cs_rank (cross-sectional rank)"]
+    CSRank --> TSRank["ts_rank (rolling 5-day rank)"]
+    TSRank --> Ret["ret_1 (1-day return)"]
+    TSRank --> Window["window: 5"]
+```
+
+Read it from the leaves upward: calculate each asset’s one-period return, rank that return within the asset’s last five observations, rank those values across today’s universe, then reverse the sign. The economic story is a short-horizon reversal hypothesis. The AST is the wiring diagram that makes that story testable.
+
 | Node family | Examples | Question it answers |
 |---|---|---|
 | Terminals | `open`, `close`, `volume`, `eps`, `estimate_revision` | What information is allowed in? |
@@ -73,14 +89,6 @@ where $u$ is a unary operator, $b$ is a binary operator, $d$ is a permitted look
 | Time-series operators | `ts_mean(x, d)`, `ts_rank(x, d)`, `ts_delta(x, d)`, `ts_corr(x, y, d)`, `decay_linear(x, d)` | How has one asset behaved through time? |
 | Cross-sectional operators | `cs_rank(x)`, `zscore(x)`, `winsorize(x)` | How does an asset compare with its peers today? |
 | Group and risk operators | `neutralize(x, industry)`, `residualize(x, B_t)` | Is the apparent signal just sector or known-factor exposure? |
-
-For example, a simple expression might be
-
-$$
-\alpha_t=-\operatorname{cs\_rank}\left(\operatorname{ts\_rank}(r_{1,t}, 5)\right).
-$$
-
-Read it from the leaves upward: calculate each asset’s one-period return, rank that return within the asset’s last five observations, rank those values across today’s universe, then reverse the sign. The economic story is a short-horizon reversal hypothesis. The AST is the wiring diagram that makes that story testable.
 
 ### Type checks are research controls, not decoration
 
