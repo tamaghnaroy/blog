@@ -13,13 +13,13 @@ That distinction is more than tidy notation. It is the difference between a clev
 At decision time $t$, let $U_t$ be the *point-in-time* investable universe and let $X_{t-L+1:t}$ contain only data known by then: adjusted prices, volumes, fundamentals with their publication timestamps, estimates, and approved alternative data. A formulaic alpha is a closed-form function in a domain-specific language (DSL):
 
 $$
-s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{|U_t|}.
+s_t=f\left(X_{t-L+1:t}, U_t\right) \in \mathbb{R}^{|U_t|}. \tag{1}
 $$
 
-The output $s_{i,t}$ is a score for asset $i$, not a promised return. The usual target is a future, executable-horizon return,
+The output $s_{i,t}$ is a score for asset $i$, not a promised return. The usual target is a future, executable-horizon return with observation delay $\delta$,
 
 $$
-y_{i,t}^{(h)}=\frac{P^{\mathrm{exec}}_{i,t+\delta+h}}{P^{\mathrm{exec}}_{i,t+\delta}}-1,
+y_{i,t}^{(h)}=\frac{P^{\mathrm{exec}}_{i,t+\delta+h}}{P^{\mathrm{exec}}_{i,t+\delta}}-1, \tag{2}
 $$
 
 where $\delta$ is the delay from observing the signal to the first tradable price. Defining $\delta$ explicitly prevents a common error: using a closing value to trade at that same close.
@@ -27,7 +27,7 @@ where $\delta$ is the delay from observing the signal to the first tradable pric
 Think of the formula as a microscope, not a factory. It magnifies one possible pattern in a large data panel. Portfolio construction decides whether that pattern is useful after the rest of the book is visible:
 
 $$
-w_t=\arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t-\lambda w^\top\Sigma_t w-\eta\,\widehat{\operatorname{TC}}(w-w_{t-1})\right\}.
+w_t=\arg\max_{w\in\mathcal C_t}\left\{w^\top\hat\mu_t-\lambda w^\top\Sigma_t w-\eta\,\widehat{\operatorname{TC}}(w-w_{t-1})\right\}. \tag{3}
 $$
 
 Here $\hat\mu_t$ may be based on several alpha scores, $\Sigma_t$ is a risk model, $\widehat{\operatorname{TC}}$ estimates trading costs, and $\mathcal C_t$ encodes exposure, liquidity, borrow, leverage, and concentration limits. Keeping $f$ separate from this optimizer makes both research and audit much clearer.
@@ -118,7 +118,7 @@ GP maintains a population of ASTs. Selection favors a fitness score; mutation re
 
 ### Reinforcement learning (RL): construct a formula one action at a time
 
-In tree-building RL, the state is a partial AST and an action appends a terminal, operator, or close-tree token. A policy learns to maximize a delayed reward after the completed formula is tested. This is attractive when the reward can include net IC, turnover, complexity, and novelty. It is also brittle: noisy backtests produce noisy rewards, and a poorly designed reward invites reward hacking. A good RL system uses grammar masks, repeated seeds, uncertainty-aware evaluation, and a reward based on **marginal portfolio contribution**, not raw in-sample IC alone. [Synergistic alpha collections via RL](https://arxiv.org/abs/2306.12964) makes this portfolio-level objective explicit.
+In tree-building RL, the state is a partial AST and an action appends a terminal, operator, or close-tree token. A policy learns to maximize a delayed reward after the completed formula is tested. This is attractive when the reward can include net IC, turnover, complexity, and novelty. It is also brittle: noisy backtests produce noisy rewards, and a poorly designed reward invites reward hacking. A good RL system uses grammar masks, repeated seeds, uncertainty-aware evaluation, and a reward based on **marginal portfolio contribution** (as formalized in the portfolio optimizer of Eq. 3), not raw in-sample IC alone. [Synergistic alpha collections via RL](https://arxiv.org/abs/2306.12964) makes this portfolio-level objective explicit.
 
 ### GFlowNets: sample a *set* of good, diverse trees
 
@@ -174,10 +174,10 @@ Use walk-forward development, not one flattering train/test split. Keep the fina
 
 ## 6. Score a factor as a portfolio contribution, not a trophy
 
-For cross-sectional work, a useful first diagnostic is the daily Spearman information coefficient:
+For cross-sectional work, a useful first diagnostic is the daily Spearman information coefficient evaluated against the delayed horizon target $y_t^{(h)}$ from Eq. 2:
 
 $$
-\operatorname{RankIC}_t=\operatorname{corr}_{\mathrm{Spearman}}(s_t, y_t^{(h)}).
+\operatorname{RankIC}_t=\operatorname{corr}_{\mathrm{Spearman}}(s_t, y_t^{(h)}). \tag{4}
 $$
 
 Report its mean, dispersion, serial dependence, and a heteroskedasticity-and-autocorrelation-consistent (HAC) t-statistic. Then ask harder questions: Does the signal survive by sector, size, volatility regime, and geographic market? Does it work after the assumed delay and costs? Does the result belong to a coherent economic mechanism, or to one lucky window?
@@ -187,10 +187,10 @@ Most importantly, test the candidate after accounting for the existing book. Let
 $$
 \tilde{s}^{(k)}_t=(I-P_{B_t})s^{(k)}_t,
 \qquad
-P_{B_t}=B_t(B_t^\top B_t)^{-1}B_t^\top,
+P_{B_t}=B_t(B_t^\top B_t)^{-1}B_t^\top, \tag{5}
 $$
 
-with regularization where needed. Evaluate $\tilde{s}^{(k)}_t$, its marginal effect on the optimizer, and its net contribution to portfolio P&L. A factor with a lower standalone IC can be more valuable if it diversifies the book during stressed markets.
+with regularization where needed. Evaluate $\tilde{s}^{(k)}_t$, its marginal effect on the optimizer of Eq. 3, and its net contribution to portfolio P&L. A factor with a lower standalone IC can be more valuable if it diversifies the book during stressed markets.
 
 ### Multiple testing is part of the model
 
