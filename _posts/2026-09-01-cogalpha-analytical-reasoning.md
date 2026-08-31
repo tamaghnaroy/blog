@@ -2,6 +2,7 @@
 layout: post
 title: "CogAlpha and Analytical Reasoning: Specialization Before Evolution"
 categories: [theory, math]
+date: 2026-09-01 00:01:00 +04:00
 ---
 
 Formulaic-alpha search usually varies expressions inside one common population. CogAlpha takes a different position: diversity should enter before selection, through specialized agents that look for different classes of market mechanism. Its seven-level hierarchy spans market structure and cycles; extreme risk and fragility; price-volume dynamics; price-volatility behavior; multi-scale complexity; stability and regime gating; and geometric and factor-fusion mechanisms. A multi-agent quality process then decides which candidates may enter an evolutionary loop.

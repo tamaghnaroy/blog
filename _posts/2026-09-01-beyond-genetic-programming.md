@@ -2,6 +2,7 @@
 layout: post
 title: "Beyond Genetic Programming: Guided Search for Formulaic Alphas"
 categories: [theory, math]
+date: 2026-09-01 00:01:00 +04:00
 ---
 
 Genetic programming (GP) is a natural baseline for formulaic alpha discovery: mutate expression trees, retain high-scoring candidates, and repeat. Its weakness is not that mutation is invalid, but that it spends most of its budget in an enormous symbolic space with sparse feedback. Reinforcement learning (RL) and Monte Carlo Tree Search (MCTS) offer a different control loop: construct and refine expressions sequentially, using evaluation feedback to decide which partial search paths deserve more computation.

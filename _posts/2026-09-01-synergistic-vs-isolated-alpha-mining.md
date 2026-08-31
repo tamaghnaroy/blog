@@ -2,6 +2,7 @@
 layout: post
 title: "Synergistic vs. Isolated Alpha Mining: Optimizing the Portfolio, Not the Formula"
 categories: [theory, math]
+date: 2026-09-01 00:01:00 +04:00
 ---
 
 An alpha factor should not be evaluated as though it will trade alone. If the production model combines a library of factors, the relevant question is not whether a candidate has a high standalone information coefficient (IC), but whether it improves the *combined* signal after the existing library is taken into account. This distinction turns alpha mining from a ranking problem into a sequential portfolio-construction problem.
