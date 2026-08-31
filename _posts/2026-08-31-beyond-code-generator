@@ -1,0 +1,65 @@
+# Beyond the Code Generator: Why One-Shot Prompting Fails and How “Tri-Brain” Agents Build Real Alpha Loops
+
+In the current era of the hallucinated backtest, there is a dangerous misconception that alpha generation is a simple byproduct of code synthesis. Many fund managers mistakenly believe that because an LLM can write Python, it can perform quantitative research. This is a structural fallacy. In the adversarial environment of high-frequency markets, unconstrained code generation acts as an unreliable narrator, more likely to produce a signal that "looks" like alpha while quietly feasting on look-ahead bias. To build systems that survive out-of-sample, we must move beyond the "chatbot" paradigm and toward autonomous research architectures that enforce the scientific method through Domain-Specific Language (DSL) compilation and structural constraints.
+
+1. The Look-Ahead Trap: When "Perfect" Metrics Collapse
+
+The most persistent threat to autonomous research is data leakage, and Large Language Models are notoriously prone to it. A critical failure observed in early, permissive iterations of the AQuA system highlights the fundamental weakness of human-like "Reviewer" agents.
+
+Case Study: The Participation Ratio Bug An LLM was tasked with generating an intraday volume-participation factor. The agent’s stated economic intent was causal: measuring the ratio of volume traded from the open up to the current minute. However, the implementation normalized this by the total daily volume. Because the total daily volume includes bars that haven't occurred yet at midday, the factor became a "future-peeking" signal with impossible predictive power.
+
+The LLM Blindspot This bug bypassed both the "Programmer" and "Reviewer" agents because the LLM performed a Semantic Review—it focused on the plausibility of the natural language description rather than the "exact set of bars" the code touched. The LLM assumes the code does what the description says it does. To solve this, we must replace model-based judgment with AST-Enforced Causality. By restricting the agent to a library of causal operators, we ensure that causality is closed under composition; any expression the system assembles is structurally incapable of peek-ahead bugs.
+
+2. The Tri-Brain Architecture: A Unified Agentic Workflow
+
+The Tri-Brain system is a decoupled, multi-layered agentic workflow that shifts the research process from loose prompting to a closed-loop scientific method. This architecture maps directly to the AQuA framework's multi-agent roles:
+
+* Macro Brain (The Planner): Comprising the AI Manager and Policy Store, this layer selects research themes (e.g., "Open Interest Crises") and archetypes. It consults persistent memory to ensure the search avoids saturated strategies and focuses on unexplored regimes.
+* Micro Brain (The Builder): Comprising the Idea Miner, Factor Evaluator, and Operator Registry, this layer translates hypotheses into symbolic expression trees. It does not write arbitrary Python; it emits programs in a restricted DSL through strict safety gates.
+* Cross Brain (The Analyst): Comprising the Research Librarian and Falsification-driven Belief Updates, this layer performs post-run attribution, identifies "code drift," and documents failed economic mechanisms to update the global memory store.
+
+3. Step 1: Ingestion & The A/B/C Taxonomy
+
+Raw research cannot be fed directly into an LLM without introducing "code bloat" and leakage. We utilize a three-layer taxonomy to convert market intuition into machine-readable instructions.
+
+Layer	Function	Purpose
+A-Layer (Data Steward)	Data Alignment & Quality Guardrails	Rejects invalid requests and ensures high-quality alignment (e.g., rejecting order-book requests for OHLCV strategies).
+B-Layer (Idea Miner)	Concept Translation	Maps market intuition (e.g., "Reversion") to a specific Mechanism (e.g., "Price-Volume Divergence").
+C-Layer (Operator Registry)	Symbolic Synthesis	Synthesizes the final Archetype using a library of validated, causal operators (e.g., C103 Divergence).
+
+4. Step 2: Macro Brain & Memory-Driven Theme Routing
+
+The Macro Brain coordinates search cycles through state-driven exploration. Unlike one-shot systems that restart from a blank prompt, the Macro Brain utilizes three specific routing modes to navigate the search space:
+
+1. Fixed-Theme: A focused search on a specific market phenomenon, such as "Volume-Price Divergence."
+2. Coarse-Guided: A broad exploration across multiple categories to find novel signal areas.
+3. Memory-Driven: The system consults the Knowledge Store to avoid mechanisms that have repeatedly failed. If the memory store indicates that "Short-term Momentum in Small Caps" has failed to maintain monthly IC stability, the Macro Brain steers the system toward higher-conviction themes.
+
+5. Step 3: Micro Brain & The AST Tri-Alignment Guard
+
+The Micro Brain serves as the Compilation Gatekeeper, enforcing safety through Abstract Syntax Tree (AST) parsing. By converting output into an AST, the system technically prohibits unsafe operations.
+
+The Tri-Alignment Judge The system performs a three-way semantic check: Hypothesis Text ↔ Natural Language Explanation ↔ Stripped Code Logic. If the code logic (the AST) includes a "reverse rolling window" (reading forward) while the hypothesis claims to be "momentum," the factor is rejected before it ever touches a backtester.
+
+Safety and Stability Protocols
+
+* Sandboxed Environment: The agent is prohibited from arbitrary Python imports; it is restricted to the provided operator registry.
+* Dimensional Integrity: The system uses dimensional analysis to prevent logical errors, such as adding volume to price.
+* Stability Rejection: Factors are subjected to automated unit tests. Any factor failing the monthly IC stability criteria or showing excessive correlation with the existing factor pool is automatically rejected.
+
+6. Step 4: The Cross Brain — FAA & Memory Updates
+
+Following evaluation, the Cross Brain performs Factor-to-Archetype Attribution (FAA). Agents often experience "code drift," where mutations in a symbolic expression change the factor's functional family. FAA parses the final AST to re-categorize the factor's true identity (e.g., a volatility factor that has mutated into a trend signal).
+
+The Falsification Log The Cross Brain documents "belief updates" in a persistent store. For instance, in the "Price rebound after deleveraging" iteration, the Cross Brain may find that rebounds fail when they lack Taker-flow confirmation and Basis-rate recovery. These "falsified economic mechanisms" are written to memory, ensuring that the next cycle prioritizes "flow-gap" confirmation rather than simple price recovery.
+
+7. The ROI of Cognitive Systems & Engineering Takeaways
+
+Moving from "token-by-token generation" to program construction via Monte Carlo Tree Search (MCTS) provides a massive engineering advantage: it prunes the search space from 10^{63} to a manageable set of logical, dimensionally consistent expressions. Empirical results from the AQuA and XAlpha studies validate this structural rigor:
+
+* Alpha Signal Strength: The system achieved a combined Validation Information Coefficient (IC) of 0.190 on a crypto universe.
+* Model Performance: The hybrid model reached a per-stock IC of +0.0843, representing an absolute improvement of +0.0230 (37.5%) over the GRU baseline.
+* Strategy Returns: US equity long/short strategies reached Sharpe Ratios of 1.53 to 2.50.
+* Historical Consistency: Performance remained positive every year from 2021 to 2025, proving resilience through major regime shifts.
+
+Final Synthesis The core engineering lesson is clear: Architecture, AST-enforced safety contracts, and formal state memory are more critical to alpha mining than the raw token size of the underlying LLM. Success lies in moving away from models that "write code" and toward systems that "construct programs" within a sealed environment where leakage is structurally impossible. Architecture—not raw inference power—is the primary driver of persistent alpha.
